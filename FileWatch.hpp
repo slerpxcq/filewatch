@@ -178,17 +178,18 @@ namespace filewatch {
 
 	public:
 
-		FileWatch(StringType path, UnderpinningRegex pattern, std::function<void(const StringType& file, const Event event_type)> callback) :
+		FileWatch(StringType path, UnderpinningRegex pattern, std::function<void(const StringType& file, const Event event_type, void* user_pointer)> callback, void* user_pointer = nullptr) :
 			_path(absolute_path_of(path)),
 			_pattern(pattern),
 			_callback(callback),
-                  _directory(get_directory(path))
+			_directory(get_directory(path)),
+            _user_pointer(user_pointer)
 		{
 			init();
 		}
 
-		FileWatch(StringType path, std::function<void(const StringType& file, const Event event_type)> callback) :
-			FileWatch<StringType>(path, UnderpinningRegex(_regex_all), callback) {}
+		FileWatch(StringType path, std::function<void(const StringType& file, const Event event_type, void* user_pointer)> callback, void* user_pointer = nullptr) :
+			FileWatch<StringType>(path, UnderpinningRegex(_regex_all), callback, user_pointer) {}
 
 		~FileWatch() {
 			destroy();
@@ -231,7 +232,8 @@ namespace filewatch {
 		// only used if watch a single file
 		StringType _filename;
 
-		std::function<void(const StringType& file, const Event event_type)> _callback;
+		std::function<void(const StringType& file, const Event event_type, void* user_pointer)> _callback;
+        void* _user_pointer;
 
 		std::thread _watch_thread;
 
@@ -1229,7 +1231,7 @@ namespace filewatch {
 					if (_callback) {
 						try
 						{
-							_callback(file.first, file.second);
+							_callback(file.first, file.second, _user_pointer);
 						}
 						catch (const std::exception&)
 						{
